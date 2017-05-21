@@ -10,7 +10,7 @@
 	<groupId>com.dmken.oss</groupId>
 	<artifactId>yapf</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
-	<packaging>pom</packaging>
+	<packaging>jar</packaging>
 
 
 
