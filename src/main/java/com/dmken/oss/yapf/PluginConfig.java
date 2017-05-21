@@ -21,7 +21,6 @@ package com.dmken.oss.yapf;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.dmken.oss.yapf.util.ArrayUtil;
@@ -67,7 +66,7 @@ public interface PluginConfig {
      * <code>value</code>. If a default value is defined this way, it is
      * preferred over the default value that is passed to any
      * <code>getXXX(...)</code> method.
-     *
+     * 
      * <p>
      * <b> NOTE: This method is not type-safe! You have to provide either a
      * {@link String} or, if you want to save a number, a valid number in a
@@ -81,6 +80,26 @@ public interface PluginConfig {
      *            The default value to define.
      */
     void defineDefault(final String property, final String value);
+
+    /**
+     * Sets the default value of the property <code>property</code> to the value
+     * <code>value</code>. If a default value is defined this way, it is
+     * preferred over the default value that is passed to any
+     * <code>getXXX(...)</code> method.
+     * 
+     * <p>
+     * <b> NOTE: This method is not type-safe! You have to provide either an
+     * array of {@link String Strings} or, if you want to save a number, an
+     * array of valid numbers in a format it can be parsed by the desired
+     * <code>parseXXX(...)</code> method. </b>
+     * </p>
+     *
+     * @param property
+     *            The name of the property.
+     * @param value
+     *            The default value to define.
+     */
+    void defineDefaults(final String property, final String... value);
 
     /**
      * Gets the property <code>property</code> as a {@link String} and uses
@@ -115,11 +134,12 @@ public interface PluginConfig {
     void setString(final String property, final String value);
 
     /**
+     * Sets a comment that is written into the configuration file.
      *
-     * @return The defined default values.
-     * @see #defineDefault(String, String)
+     * @param comment
+     *            The comment.
      */
-    Map<String, String> getDefaults();
+    void setComment(final String comment);
 
     // ~ Defaults ~
 
@@ -150,7 +170,7 @@ public interface PluginConfig {
     default String[] getStrings(final String property, final String... value) {
         final String str = this.getString(property, null);
         if (str == null) {
-            return Arrays.copyOf(value, value.length);
+            return value == null ? null : Arrays.copyOf(value, value.length);
         }
         return Arrays.stream(str.split(",")) //
                 // This allows escaping a "," with another "," (",,").
@@ -170,15 +190,12 @@ public interface PluginConfig {
 
     @SuppressWarnings("javadoc")
     default long[] getLongs(final String property, final long... value) {
-        //@formatter:off@
-        return Arrays.stream(this.getStrings(property,
-                        Arrays.stream(value)
-                                .mapToObj(String::valueOf)
-                                .toArray(String[]::new)
-                            ))
-                .mapToLong(Long::parseLong)
-                .toArray();
-        //@formatter:on@
+        final String[] def = value == null ? null : Arrays.stream(value).mapToObj(String::valueOf).toArray(String[]::new);
+        final String[] strings = this.getStrings(property, def);
+        if (strings == null) {
+            return value;
+        }
+        return Arrays.stream(strings).mapToLong(Long::parseLong).toArray();
     }
 
     @SuppressWarnings("javadoc")
@@ -193,15 +210,12 @@ public interface PluginConfig {
 
     @SuppressWarnings("javadoc")
     default int[] getInts(final String property, final int... value) {
-        //@formatter:off@
-        return Arrays.stream(this.getStrings(property,
-                        Arrays.stream(value)
-                                .mapToObj(String::valueOf)
-                                .toArray(String[]::new)
-                            ))
-                .mapToInt(Integer::parseInt)
-                .toArray();
-        //@formatter:on@
+        final String[] def = value == null ? null : Arrays.stream(value).mapToObj(String::valueOf).toArray(String[]::new);
+        final String[] strings = this.getStrings(property, def);
+        if (strings == null) {
+            return value;
+        }
+        return Arrays.stream(strings).mapToInt(Integer::parseInt).toArray();
     }
 
     @SuppressWarnings("javadoc")
@@ -216,15 +230,12 @@ public interface PluginConfig {
 
     @SuppressWarnings("javadoc")
     default double[] getDoubles(final String property, final double... value) {
-        //@formatter:off@
-        return Arrays.stream(this.getStrings(property,
-                        Arrays.stream(value)
-                                .mapToObj(String::valueOf)
-                                .toArray(String[]::new)
-                            ))
-                .mapToDouble(Double::parseDouble)
-                .toArray();
-        //@formatter:on@
+        final String[] def = value == null ? null : Arrays.stream(value).mapToObj(String::valueOf).toArray(String[]::new);
+        final String[] strings = this.getStrings(property, def);
+        if (strings == null) {
+            return value;
+        }
+        return Arrays.stream(strings).mapToDouble(Double::parseDouble).toArray();
     }
 
     @SuppressWarnings("javadoc")
@@ -239,7 +250,12 @@ public interface PluginConfig {
 
     @SuppressWarnings("javadoc")
     default boolean[] getBooleans(final String property, final boolean... value) {
-        return ArrayUtil.toBooleanArray(this.getStrings(property, ArrayUtil.toStringArray(value)));
+        final String[] def = value == null ? null : ArrayUtil.toStringArray(value);
+        final String[] strings = this.getStrings(property, def);
+        if (strings == null) {
+            return value;
+        }
+        return ArrayUtil.toBooleanArray(strings);
     }
 
     // ~ Default Setters ~
