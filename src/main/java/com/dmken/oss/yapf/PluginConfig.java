@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,6 +20,7 @@
 package com.dmken.oss.yapf;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
@@ -31,18 +32,33 @@ import com.dmken.oss.yapf.util.ArrayUtil;
  */
 public interface PluginConfig {
     /**
+     * Loads this plugin configuration from the given input stream.
+     *
+     * <p>
+     * <b> NOTE: Do not use this if you are not 100% sure what you are doing!
+     * </b>
+     * </p>
+     *
+     * @param in
+     *            The {@link InputStream input stream}.
+     * @throws IOException
+     *             If any I/O error occurs.
+     */
+    void load(final InputStream in) throws IOException;
+
+    /**
      * Loads this plugin configuration from disk.
      *
      * <p>
      * The location where the configuration is stored is defined at the creation
      * of the configuration and must not change.
      * </p>
-     * 
+     *
      * <p>
      * If the configuration does not exist on disk, an empty configuration is
      * returned.
      * </p>
-     * 
+     *
      * @throws IOException
      *             If any I/O error occurs.
      */
@@ -50,12 +66,12 @@ public interface PluginConfig {
 
     /**
      * Persists this plugin configuration to disk.
-     * 
+     *
      * <p>
      * The location where to store the configuration is defined at the creation
      * of the configuration and must not change.
      * </p>
-     * 
+     *
      * @throws IOException
      *             If any I/O error occurs.
      */
@@ -66,12 +82,12 @@ public interface PluginConfig {
      * <code>value</code>. If a default value is defined this way, it is
      * preferred over the default value that is passed to any
      * <code>getXXX(...)</code> method.
-     * 
+     *
      * <p>
      * <b> NOTE: This method is not type-safe! You have to provide either a
      * {@link String} or, if you want to save a number, a valid number in a
-     * format it can be parsed by the desired <code>parseXXX(...)</code>
-     * method. </b>
+     * format it can be parsed by the desired <code>parseXXX(...)</code> method.
+     * </b>
      * </p>
      *
      * @param property
@@ -86,7 +102,7 @@ public interface PluginConfig {
      * <code>value</code>. If a default value is defined this way, it is
      * preferred over the default value that is passed to any
      * <code>getXXX(...)</code> method.
-     * 
+     *
      * <p>
      * <b> NOTE: This method is not type-safe! You have to provide either an
      * array of {@link String Strings} or, if you want to save a number, an
@@ -105,7 +121,7 @@ public interface PluginConfig {
      * Gets the property <code>property</code> as a {@link String} and uses
      * <code>value</code> as the default value (preferring the defined default
      * value).
-     * 
+     *
      * <p>
      * If a default value was defined using
      * {@link #defineDefault(String, String)}, it is preferred over the passed
@@ -145,7 +161,7 @@ public interface PluginConfig {
 
     /**
      * Delegates to {@link #load()}. This is just for semantic reasons.
-     * 
+     *
      * @throws IOException
      *             If any I/O error occurs.
      * @see #load()
@@ -162,9 +178,11 @@ public interface PluginConfig {
     }
 
     /*
-     * Developer Note: This method splits a single string and parses it as it
-     * where comma-separated (where to commas escape one comma). This method
-     * should be replaced when the wrapped file type supports arrays.
+     * Developer Note: This method parses a single string to multiple strings as
+     * a comma-separated string. A single quote is used to escape other commas
+     * and other single quotes are escaped using two single quotes. An
+     * implementation of the PluginConfig should override this method if the
+     * underlying data type supports string arrays.
      */
     @SuppressWarnings("javadoc")
     default String[] getStrings(final String property, final String... value) {
@@ -172,7 +190,9 @@ public interface PluginConfig {
         if (str == null) {
             return value == null ? null : Arrays.copyOf(value, value.length);
         }
-        return Arrays.stream(str.split("(?!\\\\),")) //
+        return Arrays.stream(str.split("(?<!'),")) //
+                .map(s -> s.replaceAll("'(.)", "$1")) //
+                .map(String::trim) //
                 .toArray(String[]::new);
     }
 
@@ -260,13 +280,18 @@ public interface PluginConfig {
 
     /*
      * Developer Note: This method creates a single string of the given strings
-     * by joining them with a comma as the delimiter. A comma is escaped using
-     * two commas. This should be replaced if the wrapped file type supports
-     * saving arrays.
+     * as a comma-separated string. A single quote is used to escape other
+     * commas and other single quotes are escaped using two single quotes. An
+     * implementation of the PluginConfig should override this method if the
+     * underlying data type supports string arrays.
      */
     @SuppressWarnings("javadoc")
     default void setStrings(final String property, final String... value) {// TODO
-        this.setString(property, Arrays.stream(value).map(s -> s.replaceAll(",", "\\,")).collect(Collectors.joining(", ")));
+        final String str = Arrays.stream(value) //
+                .map(s -> s.replaceAll("'", "''")) //
+                .map(s -> s.replace(",", "',")) //
+                .collect(Collectors.joining(", "));
+        this.setString(property, str);
     }
 
     @SuppressWarnings("javadoc")

@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -39,7 +39,7 @@ import com.dmken.oss.yapf.PluginConfig;
 public class PropertiesPluginConfig extends AbstractPluginConfig {
     /**
      * The properties.
-     * 
+     *
      */
     private final Properties properties = new Properties();
 
@@ -56,12 +56,22 @@ public class PropertiesPluginConfig extends AbstractPluginConfig {
     /**
      * {@inheritDoc}
      *
+     * @see com.dmken.oss.yapf.PluginConfig#load(java.io.InputStream)
+     */
+    @Override
+    public void load(final InputStream in) throws IOException {
+        this.properties.load(in);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @see com.dmken.oss.yapf.PluginConfig#load()
      */
     @Override
     public void load() throws IOException {
         try (final InputStream in = new BufferedInputStream(new FileInputStream(this.getFile().toFile()))) {
-            this.properties.load(in);
+            this.load(in);
         }
     }
 
