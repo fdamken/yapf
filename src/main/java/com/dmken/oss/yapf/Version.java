@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,17 +31,17 @@ import java.util.Objects;
 public class Version implements Comparable<Version> {
     /**
      * The major component.
-     * 
+     *
      */
     private final int major;
     /**
      * The minor component.
-     * 
+     *
      */
     private final int minor;
     /**
      * The bugfix component.
-     * 
+     *
      */
     private final int bugfix;
 
@@ -56,6 +56,10 @@ public class Version implements Comparable<Version> {
      *            {@link #bugfix}
      */
     public Version(final int major, final int minor, final int bugfix) {
+        if (major < 0 || minor < 0 || bugfix < 0) {
+            throw new IllegalArgumentException("Either major, minor or bugfix version component is negative!");
+        }
+
         this.major = major;
         this.minor = minor;
         this.bugfix = bugfix;
@@ -63,7 +67,7 @@ public class Version implements Comparable<Version> {
 
     /**
      * Constructor of Version.
-     * 
+     *
      * <p>
      * Creates a new version by parsing the given version string in the format
      * <code>X.Y.Z</code>.
