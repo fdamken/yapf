@@ -19,14 +19,63 @@
  */
 package com.dmken.oss.yapf;
 
+import java.util.Optional;
+
 import jdk.nashorn.internal.runtime.Version;
 
+/**
+ * The plugin meta is the base of every plugin as it defines its name and its
+ * main class (the class implementing the plugin interface).
+ *
+ */
 public interface PluginMeta {
+    /**
+     *
+     * @return The name of the plugin (without the suffix).
+     * @see PluginType
+     */
     String getName();
 
+    /**
+     *
+     * @return The display name of the plugin.
+     */
+    String getDisplayName();
+
+    /**
+     *
+     * @return The version of the plugin.
+     */
     Version getVersion();
 
+    /**
+     *
+     * @return The full qualified name of the main class of the plugin.
+     */
     String getMain();
 
-    String[] getAuthors();
+    /**
+     *
+     * @return The type of the plugin.
+     * @see PluginType
+     */
+    PluginType getPluginType();
+
+    /**
+     *
+     * @return The dependencies of the plugin.
+     */
+    String[] getDependencies();
+
+    /**
+     * 
+     * @return The optional dependencies of the plugin.
+     */
+    String[] getOptionalDependencies();
+
+    /**
+     *
+     * @return The authors of the plugin.
+     */
+    Optional<String[]> getAuthors();
 }

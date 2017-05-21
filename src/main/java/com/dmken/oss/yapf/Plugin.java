@@ -21,22 +21,119 @@ package com.dmken.oss.yapf;
 
 import java.nio.file.Path;
 
+/**
+ * This is the main interface of YAPF.
+ * 
+ * <p>
+ * Every plugin has to implement this interface (or extend a subclass, which is
+ * recommended) to become a real plugin. This class has to be referenced in the
+ * {@link PluginMeta plugin metadata} file to be loaded correctly.
+ * </p>
+ *
+ * @see PluginManager
+ * @see PluginMeta
+ * @see PluginType
+ */
 public interface Plugin {
+    /**
+     * Stub method. To be overridden.
+     * 
+     * <p>
+     * This method is invoked right before the plugin gets unloaded.
+     * </p>
+     * 
+     * <p>
+     * <b> NOTE: This does not take care of dependencies! That is it is not
+     * guaranteed that the dependencies are still loaded before this method is
+     * invoked. </b>
+     * </p>
+     *
+     */
     void onUnload();
 
+    /**
+     * Stub method. To be overridden.
+     * 
+     * <p>
+     * This method is invoked right before the plugin gets disabled (also if
+     * {@link #setEnabled(boolean)} was invoked <code>false</code>).
+     * </p>
+     *
+     */
     void onDisable();
 
+    /**
+     * Stub method. To be overridden.
+     * 
+     * <p>
+     * This method is invoked right after the plugin was enabled (also if
+     * {@link #setEnabled(boolean)} was invoked with <code>true</code>).
+     * </p>
+     *
+     */
     void onEnable();
 
+    /**
+     * Stub method. To be overridden.
+     * 
+     * <p>
+     * This method is invoked right after the plugin was loaded.
+     * </p>
+     * 
+     * <p>
+     * <b> NOTE: This does not take care of dependencies! That is it is not
+     * guaranteed that the dependencies are enabled before this method is
+     * invoked. </b>
+     * </p>
+     *
+     */
     void onLoad();
 
-    Path getDataPath();
+    /**
+     * The path of the (existing) directory where the plugin can store files
+     * (e.g. configuration files).
+     * 
+     * <p>
+     * <b> NOTE: Files must not be stored anywhere else! </b>
+     * </p>
+     *
+     * @return The path of the data directory.
+     */
+    Path getDataFolder();
 
+    /**
+     *
+     * @return The base configuration of this plugin.
+     */
     PluginConfig getConfig();
 
+    /**
+     *
+     * @return The {@link PluginMeta metadata} about this plugin.
+     */
     PluginMeta getPluginMeta();
 
+    /**
+     *
+     * @return The {@link PluginManager plugin manager} that has loaded this
+     *         plugin.
+     */
+    PluginManager getPluginManager();
+
+    /**
+     * Checks whether the plugin is enabled. If a plugin is not enabled, its
+     * exposed API can not be used.
+     *
+     * @return Whether this plugin is enabled or not.
+     */
     boolean isEnabled();
 
+    /**
+     * Sets this plugin as enabled or disabled. If a plugin is not enabled, its
+     * exposed API can not be used.
+     *
+     * @param enabled
+     *            Whether to enable or disable this plugin.
+     */
     void setEnabled(final boolean enabled);
 }
