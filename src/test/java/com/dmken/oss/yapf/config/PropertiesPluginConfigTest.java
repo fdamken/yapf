@@ -106,7 +106,6 @@ public class PropertiesPluginConfigTest {
         try (final BufferedReader reader = Files.newBufferedReader(this.file)) {
             String line = null;
             while ((line = reader.readLine()) != null) {
-                System.out.println(line);
                 final String expected;
                 if (line.startsWith("#COMMENT")) {
                     expected = "#COMMENT Hello, World! I am a comment.";
