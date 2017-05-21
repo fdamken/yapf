@@ -172,9 +172,7 @@ public interface PluginConfig {
         if (str == null) {
             return value == null ? null : Arrays.copyOf(value, value.length);
         }
-        return Arrays.stream(str.split(",")) //
-                // This allows escaping a "," with another "," (",,").
-                .map(s -> s.isEmpty() ? "," : s.trim()) //
+        return Arrays.stream(str.split("(?!\\\\),")) //
                 .toArray(String[]::new);
     }
 
@@ -267,8 +265,8 @@ public interface PluginConfig {
      * saving arrays.
      */
     @SuppressWarnings("javadoc")
-    default void setStrings(final String property, final String... value) {
-        this.setString(property, Arrays.stream(value).map(s -> s.replaceAll(",", ",,")).collect(Collectors.joining(", ")));
+    default void setStrings(final String property, final String... value) {// TODO
+        this.setString(property, Arrays.stream(value).map(s -> s.replaceAll(",", "\\,")).collect(Collectors.joining(", ")));
     }
 
     @SuppressWarnings("javadoc")
