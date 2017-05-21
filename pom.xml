@@ -32,6 +32,7 @@
 		<project.build.sourceEncoding>${project.properties.encoding}</project.build.sourceEncoding>
 
 		<!-- Dependency versions. -->
+		<junit.version>4.12</junit.version>
 		<log4j.version>2.8.2</log4j.version>
 		<slf4j.version>1.7.25</slf4j.version>
 
@@ -143,6 +144,12 @@
 			</dependency>
 
 			<dependency>
+				<groupId>junit</groupId>
+				<artifactId>junit</artifactId>
+				<version>${junit.version}</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.logging.log4j</groupId>
 				<artifactId>log4j-core</artifactId>
 				<version>${log4j.version}</version>
@@ -164,6 +171,10 @@
 		</dependency>
 
 		<!-- Scope: test -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
