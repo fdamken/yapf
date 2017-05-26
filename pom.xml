@@ -312,6 +312,7 @@
 					<encoding>${project.properties.encoding}</encoding>
 					<excludes>
 						<exclude>**/*spring*json</exclude>
+						<exclude>**/test/resources/**</exclude>
 					</excludes>
 					<failOnMissingHeader>true</failOnMissingHeader>
 					<failOnNotUptodateHeader>false</failOnNotUptodateHeader>
