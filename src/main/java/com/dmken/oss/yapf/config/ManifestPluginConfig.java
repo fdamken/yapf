@@ -19,38 +19,44 @@
  */
 package com.dmken.oss.yapf.config;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Path;
-import java.util.Properties;
+import java.util.jar.Manifest;
 
 import com.dmken.oss.yapf.PluginConfig;
 
 /**
- * An implementation of {@link PluginConfig} using Java's standard
- * {@link Properties}.
+ * An implementation of {@link PluginConfig} using Java's {@link Manifest JAR
+ * manifest}.
+ *
+ * <p>
+ * <b> NOTE: This is a read-only configuration! </b>
+ * </p>
  *
  */
-public class PropertiesPluginConfig extends AbstractFilePluginConfig {
+public class ManifestPluginConfig extends AbstractPluginConfig {
     /**
      * The properties.
      *
      */
-    private final Properties properties = new Properties();
+    private final Manifest manifest;
+    /**
+     * The root name of the manifest entries to start the properties from.
+     *
+     */
+    private final String name;
 
     /**
      * Constructor of PropertiesPluginConfig.
      *
-     * @param file
-     *            The path where to store the configuration.
+     * @param manifest
+     *            The {@link #manifest} to set.
+     * @param name
+     *            The {@link #name} to set.
      */
-    public PropertiesPluginConfig(final Path file) {
-        super(file);
+    public ManifestPluginConfig(final Manifest manifest, final String name) {
+        this.manifest = manifest;
+        this.name = name;
     }
 
     /**
@@ -60,7 +66,7 @@ public class PropertiesPluginConfig extends AbstractFilePluginConfig {
      */
     @Override
     public void load(final InputStream in) throws IOException {
-        this.properties.load(in);
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -70,9 +76,7 @@ public class PropertiesPluginConfig extends AbstractFilePluginConfig {
      */
     @Override
     public void load() throws IOException {
-        try (final InputStream in = new BufferedInputStream(new FileInputStream(this.getFile().toFile()))) {
-            this.load(in);
-        }
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -82,9 +86,7 @@ public class PropertiesPluginConfig extends AbstractFilePluginConfig {
      */
     @Override
     public void save() throws IOException {
-        try (final OutputStream out = new BufferedOutputStream(new FileOutputStream(this.getFile().toFile()))) {
-            this.properties.store(out, this.comment);
-        }
+        throw new UnsupportedOperationException("read only");
     }
 
     /**
@@ -94,7 +96,7 @@ public class PropertiesPluginConfig extends AbstractFilePluginConfig {
      */
     @Override
     protected String getString0(final String property) {
-        return this.properties.getProperty(property);
+        return this.manifest.getAttributes(this.name).getValue(property);
     }
 
     /**
@@ -105,6 +107,6 @@ public class PropertiesPluginConfig extends AbstractFilePluginConfig {
      */
     @Override
     protected void setString0(final String property, final String value) {
-        this.properties.setProperty(property, value);
+        throw new UnsupportedOperationException("read only");
     }
 }

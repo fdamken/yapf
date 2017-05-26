@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,7 +19,6 @@
  */
 package com.dmken.oss.yapf.config;
 
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,39 +32,19 @@ public abstract class AbstractPluginConfig implements PluginConfig {
     /**
      * The default values defined using {@link #defineDefault(String, String)}
      * or {@link #defineDefaults(String, String...)}.
-     * 
+     *
      */
     private final Map<String, Object> defaults = new HashMap<>();
 
     /**
-     * The path where to save the configuration.
-     * 
-     */
-    private final Path file;
-
-    /**
      * The comment.
-     * 
+     *
      */
     protected String comment;
 
     /**
-     * Constructor of AbstractPluginConfig.
-     *
-     * @param file
-     *            See {@link #file}.
-     */
-    public AbstractPluginConfig(final Path file) {
-        if (file == null) {
-            throw new IllegalArgumentException("File must not be null!");
-        }
-
-        this.file = file;
-    }
-
-    /**
      * <b>Internal usage only!</b>
-     * 
+     *
      * <p>
      * Gets the {@link String} value of the given property.
      * </p>
@@ -78,7 +57,7 @@ public abstract class AbstractPluginConfig implements PluginConfig {
 
     /**
      * <b>Internal usage only!</b>
-     * 
+     *
      * <p>
      * Gets the {@link String String[]} value of the given property.
      * </p>
@@ -93,7 +72,7 @@ public abstract class AbstractPluginConfig implements PluginConfig {
 
     /**
      * <b>Internal usage only!</b>
-     * 
+     *
      * <p>
      * Sets the value of the given property.
      * </p>
@@ -107,7 +86,7 @@ public abstract class AbstractPluginConfig implements PluginConfig {
 
     /**
      * <b>Internal usage only!</b>
-     * 
+     *
      * <p>
      * Sets the value of the given property.
      * </p>
@@ -231,13 +210,5 @@ public abstract class AbstractPluginConfig implements PluginConfig {
     @Override
     public void setComment(final String comment) {
         this.comment = comment;
-    }
-
-    /**
-     *
-     * @return {@link #file}.
-     */
-    protected Path getFile() {
-        return this.file;
     }
 }
