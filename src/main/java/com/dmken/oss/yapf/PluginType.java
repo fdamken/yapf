@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 /**
  * Defines the different plugin types, which are:
  * <table>
+ * <caption>Plugin Types</caption>
  * <tr>
  * <th>Type</th>
  * <th>Description</th>
@@ -52,9 +53,9 @@ import java.util.regex.Pattern;
  * <tr>
  * <td>Regular</td>
  * <td>A regular plugin does neither define nor implement an API but is just
- * using APIs of other plugins. It must not expose any APIs.</code>
+ * using APIs of other plugins. It must not expose any APIs.</td>
  * <td>Nothing, any name matching neither the API nor the implementation
- * suffixes is considered to be a regular plugin.</td></td>
+ * suffixes is considered to be a regular plugin.</td>
  * </table>
  *
  * <p>
