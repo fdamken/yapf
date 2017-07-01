@@ -20,10 +20,20 @@
 package com.dmken.oss.yapf.loader;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.dmken.oss.yapf.Plugin;
 import com.dmken.oss.yapf.PluginConfig;
 import com.dmken.oss.yapf.PluginMeta;
 import com.dmken.oss.yapf.PluginType;
@@ -31,6 +41,7 @@ import com.dmken.oss.yapf.Version;
 import com.dmken.oss.yapf.config.ManifestPluginConfig;
 import com.dmken.oss.yapf.meta.SimplePluginMeta;
 import com.dmken.oss.yapf.meta.UnmodifiablePluginMeta;
+import com.dmken.oss.yapf.meta.exception.MalformedPluginMetaException;
 import com.dmken.oss.yapf.util.FileUtil;
 
 /**
@@ -39,6 +50,12 @@ import com.dmken.oss.yapf.util.FileUtil;
  *
  */
 public class PluginLoader {
+    /**
+     * The logger.
+     *
+     */
+    private static final Logger LOGGER = LoggerFactory.getLogger(PluginLoader.class);
+
     /**
      * The name of the attributes in the manifest.
      *
@@ -84,6 +101,13 @@ public class PluginLoader {
     private static final String META_AUTHORS = "authors";
 
     /**
+     * The class loaders responsible for one plugin each (the key is the plugin
+     * name).
+     *
+     */
+    private final Map<String, PluginClassLoader> classLoaders = new HashMap<>();
+
+    /**
      * Extracts the {@link PluginMeta} from the {@link Manifest JAR manifest} or
      * the given file.
      *
@@ -122,5 +146,81 @@ public class PluginLoader {
             pluginMeta.setPluginType(pluginType);
             return new UnmodifiablePluginMeta(pluginMeta);
         }
+    }
+
+    /**
+     * Loads the plugin described by the given {@link PluginMeta metadata}.
+     *
+     * <p>
+     * <b> NOTE: This does the plugin loading only! It does not create API
+     * proxies, enable the plugin or similar. </b>
+     * </p>
+     *
+     * <p>
+     * <b> NOTE: This invokes {@link Plugin#onLoad()}. </b>
+     * </p>
+     *
+     * @param meta
+     *            The {@link PluginMeta metadata} about the plugin to load.
+     * @return The loaded plugin.
+     * @throws MalformedPluginMetaException
+     *             If the plugin meta is malformed (including if the main class
+     *             does not exist, is an interface, etc.).
+     */
+    @SuppressWarnings("resource")    // Class loader is not closed.
+    public Plugin loadPlugin(final PluginMeta meta) throws MalformedPluginMetaException {
+        if (!PluginMeta.isValid(meta)) {
+            throw new IllegalArgumentException("Meta must be valid!");
+        }
+
+        final URL location = meta.getLocation();
+        final String name = meta.getName();
+        final String displayName = meta.getDisplayName();
+        final String main = meta.getMain();
+
+        PluginLoader.LOGGER.debug("Starting loading of <{0}>.", name);
+
+        final PluginClassLoader classLoader = new PluginClassLoader(location);
+        final Class<?> clazz;
+        try {
+            clazz = Class.forName(main, true, classLoader);
+        } catch (final ClassNotFoundException cause) {
+            throw new MalformedPluginMetaException(name, "Main class does not exist!", cause);
+        }
+        if (!Plugin.class.isAssignableFrom(clazz)) {
+            throw new MalformedPluginMetaException(name, "Main class is not a subclass of Plugin!");
+        }
+        final Class<? extends Plugin> pluginClass = clazz.asSubclass(Plugin.class);
+        if (pluginClass.isInterface() || Modifier.isAbstract(pluginClass.getModifiers())) {
+            throw new MalformedPluginMetaException(name, "Main class must be a regular class (not an interface or abstract)!");
+        }
+        final Constructor<? extends Plugin> ctor;
+        try {
+            ctor = pluginClass.getConstructor();
+        } catch (final NoSuchMethodException cause) {
+            throw new MalformedPluginMetaException(name, "Main class does not have a default constructor!", cause);
+        }
+        if (!ctor.isAccessible()) {
+            throw new MalformedPluginMetaException(name, "Constructor of main class is not visible!");
+        }
+        final Plugin plugin;
+        try {
+            plugin = ctor.newInstance();
+        } catch (final InstantiationException cause) {
+            throw new MalformedPluginMetaException(name, "Failed to create instance of plugin!", cause);
+        } catch (final IllegalAccessException cause) {
+            throw new MalformedPluginMetaException(name, "Failed to access constructor of main class!", cause);
+        } catch (final InvocationTargetException cause) {
+            throw new MalformedPluginMetaException(name, "Constructor of main class threw an exception!", cause);
+        }
+
+        this.classLoaders.put(meta.getName(), classLoader);
+
+        PluginLoader.LOGGER.info("Loaded {0}.", displayName);
+
+        // Tell plugin that it is loaded.
+        plugin.onLoad();
+
+        return plugin;
     }
 }

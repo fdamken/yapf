@@ -19,6 +19,7 @@
  */
 package com.dmken.oss.yapf.meta;
 
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -32,6 +33,7 @@ import com.dmken.oss.yapf.Version;
  */
 @SuppressWarnings("javadoc")
 public class SimplePluginMeta extends AbstractPluginMeta {
+    private URL location;
     private String name;
     private String displayName;
     private Version version;
@@ -42,6 +44,15 @@ public class SimplePluginMeta extends AbstractPluginMeta {
     private String[] authors;
 
     // ~ Getters ~
+
+    /**
+     *
+     * @return {@link #location}.
+     */
+    @Override
+    public URL getLocation() {
+        return this.location;
+    }
 
     /**
      *
@@ -116,6 +127,14 @@ public class SimplePluginMeta extends AbstractPluginMeta {
     }
 
     // ~ Setters ~
+    /**
+     *
+     * @param location
+     *            the {@link #location} to set
+     */
+    public void setLocation(final URL location) {
+        this.location = location;
+    }
 
     /**
      *

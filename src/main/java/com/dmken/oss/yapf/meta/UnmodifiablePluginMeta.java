@@ -19,6 +19,7 @@
  */
 package com.dmken.oss.yapf.meta;
 
+import java.net.URL;
 import java.util.Optional;
 
 import com.dmken.oss.yapf.PluginMeta;
@@ -44,7 +45,21 @@ public class UnmodifiablePluginMeta extends AbstractPluginMeta {
      *            The {@link #pluginMeta} to wrap.
      */
     public UnmodifiablePluginMeta(final PluginMeta pluginMeta) {
+        if (pluginMeta == null) {
+            throw new IllegalArgumentException("PluginMeta must not be null!");
+        }
+
         this.pluginMeta = pluginMeta;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see com.dmken.oss.yapf.PluginMeta#getLocation()
+     */
+    @Override
+    public URL getLocation() {
+        return this.pluginMeta.getLocation();
     }
 
     /**

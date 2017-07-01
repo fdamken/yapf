@@ -19,6 +19,7 @@
  */
 package com.dmken.oss.yapf;
 
+import java.net.URL;
 import java.util.Optional;
 
 /**
@@ -27,6 +28,14 @@ import java.util.Optional;
  *
  */
 public interface PluginMeta {
+    /**
+     *
+     * @return The location where the plugin lives (this is an URI pointing to a
+     *         JAR file). It must be guaranteed that the file exists and is
+     *         accessible.
+     */
+    URL getLocation();
+
     /**
      *
      * @return The name of the plugin (without the suffix).
@@ -76,4 +85,25 @@ public interface PluginMeta {
      * @return The authors of the plugin.
      */
     Optional<String[]> getAuthors();
+
+    /**
+     * Checks whether the given {@link PluginMeta meta} is valid (that is that
+     * no methods return <code>null</code> references).
+     *
+     * @param meta
+     *            The plugin meta. Can be <code>null</code>.
+     * @return Whether the given meta is valid.
+     */
+    static boolean isValid(final PluginMeta meta) {
+        return meta != null //
+                && meta.getLocation() != null //
+                && meta.getName() != null //
+                && meta.getDisplayName() != null //
+                && meta.getVersion() != null //
+                && meta.getMain() != null //
+                && meta.getPluginType() != null //
+                && meta.getDependencies() != null //
+                && meta.getOptionalDependencies() != null //
+                && meta.getAuthors() != null;
+    }
 }
