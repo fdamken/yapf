@@ -49,7 +49,7 @@ public final class FileUtil {
      *             If any I/O error occurs.
      */
     public static boolean isJarFile(final Path file) throws IOException {
-        if (file == null || Files.isRegularFile(file)) {
+        if (file == null || !Files.isRegularFile(file)) {
             return false;
         }
 
