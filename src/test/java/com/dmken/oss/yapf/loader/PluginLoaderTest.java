@@ -48,6 +48,7 @@ import org.junit.rules.TemporaryFolder;
 
 import com.dmken.oss.yapf.Plugin;
 import com.dmken.oss.yapf.PluginMeta;
+import com.dmken.oss.yapf.PluginType;
 import com.dmken.oss.yapf.Version;
 import com.dmken.oss.yapf.meta.exception.MalformedPluginMetaException;
 
@@ -76,7 +77,7 @@ public class PluginLoaderTest {
             attributes.putValue("main", main);
         });
 
-        this.assertPluginMeta(meta, name, expectedVersion, main, null, null, null, null);
+        this.assertPluginMeta(meta, name, expectedVersion, main, null, null, null, null, PluginType.REGULAR);
     }
 
     @Test
@@ -104,7 +105,7 @@ public class PluginLoaderTest {
         });
 
         this.assertPluginMeta(meta, name, expectedVersion, main, displayName, expectedDependencies, expectedOptionalDependencies,
-                expectedAuthors);
+                expectedAuthors, PluginType.REGULAR);
     }
 
     @Test
@@ -119,7 +120,8 @@ public class PluginLoaderTest {
 
         final PluginMeta meta = this.pluginLoader.extractPluginMeta(jarFile);
 
-        this.assertPluginMeta(meta, "test", new Version(1, 0, 0), "test." + className, null, null, null, null);
+        this.assertPluginMeta(meta, "test", new Version(1, 0, 0), "test." + className, null, null, null, null,
+                PluginType.REGULAR);
 
         final Plugin plugin = this.pluginLoader.loadPlugin(meta);
 
@@ -145,7 +147,7 @@ public class PluginLoaderTest {
 
     private void assertPluginMeta(final PluginMeta meta, final String expectedName, final Version expectedVersion,
             final String expectedMain, final String expectedDisplayName, final String[] expectedDependencies,
-            final String[] expectedOptionalDependencies, final String[] expectedAuthors) {
+            final String[] expectedOptionalDependencies, final String[] expectedAuthors, final PluginType pluginType) {
         Assert.assertEquals(expectedName, meta.getName());
         Assert.assertEquals(expectedVersion, meta.getVersion());
         Assert.assertEquals(expectedMain, meta.getMain());
@@ -166,6 +168,7 @@ public class PluginLoaderTest {
             Assert.assertTrue(meta.getAuthors().isPresent());
             Assert.assertArrayEquals(expectedAuthors, meta.getAuthors().get());
         }
+        Assert.assertEquals(pluginType, meta.getPluginType());
     }
 
     private Path createJarFile(final Consumer<Attributes> attributeSetter, final String className) throws IOException {
