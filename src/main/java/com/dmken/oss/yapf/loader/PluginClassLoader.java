@@ -21,9 +21,7 @@ package com.dmken.oss.yapf.loader;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.Map;
 import java.util.Optional;
-import java.util.WeakHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,21 +39,21 @@ public class PluginClassLoader extends URLClassLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginClassLoader.class);
 
     /**
-     * Cache for already loaded classes.
-     *
-     */
-    private final Map<String, Class<?>> classCache = new WeakHashMap<>();
-
-    /**
      * Constructor of PluginClassLoader.
-     *
+     * 
+     * @param pluginName
+     *            The name of the plugin this loader is for.
      * @param url
      *            The URL to load classes from.
+     * @param parent
+     *            The parent class loader.
      */
-    public PluginClassLoader(final URL url) {
-        super(new URL[] { url });
+    public PluginClassLoader(final String pluginName, final URL url, final DelegatingPluginClassLoader parent) {
+        super(new URL[] { url }, parent);
 
-        PluginClassLoader.LOGGER.trace("Creating new PluginClassLoader for <{0}>.", url.toString());
+        parent.addClassLoader(pluginName, this);
+
+        PluginClassLoader.LOGGER.trace("Creating new PluginClassLoader for <{}>.", url.toString());
     }
 
     /**
@@ -80,35 +78,35 @@ public class PluginClassLoader extends URLClassLoader {
      *            Whether to search globally for the class.
      * @return The found class.
      */
-    private Optional<Class<?>> findClass(final String name, final boolean global) {
+    Optional<Class<?>> findClass(final String name, final boolean global) {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Name must not be null or empty!");
         }
 
         if (global) {
-            PluginClassLoader.LOGGER.debug("Searching globally for class <{0}>.", name);
+            PluginClassLoader.LOGGER.debug("Searching globally for class <{}>.", name);
         } else {
-            PluginClassLoader.LOGGER.debug("Searching for class <{0}>.", name);
+            PluginClassLoader.LOGGER.debug("Searching for class <{}>.", name);
         }
 
-        PluginClassLoader.LOGGER.trace("Probing cache for class <{0}>.", name);
-        Class<?> result = this.classCache.get(name);
-        if (result == null && global) {
-            PluginClassLoader.LOGGER.trace("Not found! Probing global search <{0}>.", name);
-
-            // TODO: Do global loading.
+        Class<?> result = null;
+        PluginClassLoader.LOGGER.trace("Probing classpath <{}>.", name);
+        try {
+            result = super.findClass(name);
+        } catch (final ClassNotFoundException dummy) {
+            // Class not found. Ignore.
         }
-        if (result == null) {
-            PluginClassLoader.LOGGER.trace("Not found! Probing parent class loader <{0}>.", name);
+        if (global) {
+            PluginClassLoader.LOGGER.trace("Probing parent class loader <{}>.", name);
 
             try {
-                result = super.findClass(name);
+                result = this.getCastedParent().findClass(name);
             } catch (final ClassNotFoundException dummy) {
                 // Class not found. Ignore.
             }
         }
         if (result == null) {
-            PluginClassLoader.LOGGER.trace("Not found! Probing forName(...) with current class loader <{0}>.", name);
+            PluginClassLoader.LOGGER.trace("Not found! Probing forName(...) with current class loader <{}>.", name);
 
             try {
                 result = Class.forName(name, true, this);
@@ -116,16 +114,23 @@ public class PluginClassLoader extends URLClassLoader {
                 // Class not found. Ignore.
             }
         }
-        if (result != null) {
-            this.classCache.put(name, result);
-        }
 
         if (result == null) {
-            PluginClassLoader.LOGGER.debug("Class for found: {0}", name);
+            PluginClassLoader.LOGGER.debug("Class for found: {}", name);
         } else {
-            PluginClassLoader.LOGGER.debug("Class found: {0}", name);
+            PluginClassLoader.LOGGER.debug("Class found: {}", name);
         }
 
         return Optional.ofNullable(result);
+    }
+
+    /**
+     * Casts the parent to {@link DelegatingPluginClassLoader} (which is save as
+     * of the constructor).
+     *
+     * @return The {@link DelegatingPluginClassLoader}.
+     */
+    private DelegatingPluginClassLoader getCastedParent() {
+        return (DelegatingPluginClassLoader) this.getParent();
     }
 }

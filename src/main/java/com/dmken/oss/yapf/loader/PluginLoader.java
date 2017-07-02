@@ -25,8 +25,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
@@ -101,11 +99,11 @@ public class PluginLoader {
     private static final String META_AUTHORS = "authors";
 
     /**
-     * The class loaders responsible for one plugin each (the key is the plugin
-     * name).
-     *
+     * The parent class loader delegating class loading to the actual plugin
+     * class loaders.
+     * 
      */
-    private final Map<String, PluginClassLoader> classLoaders = new HashMap<>();
+    private final DelegatingPluginClassLoader parentClassLoader = new DelegatingPluginClassLoader(Plugin.class.getClassLoader());
 
     /**
      * Extracts the {@link PluginMeta} from the {@link Manifest JAR manifest} or
@@ -116,26 +114,46 @@ public class PluginLoader {
      * @return The extracted {@link PluginMeta}.
      * @throws IOException
      *             If any I/O error occurs.
+     * @throws MalformedPluginMetaException
+     *             If the metadata is invalid (e.g. lacking of required
+     *             attributes).
      */
-    public PluginMeta extractPluginMeta(final Path file) throws IOException {
+    public PluginMeta extractPluginMeta(final Path file) throws IOException, MalformedPluginMetaException {
         if (!FileUtil.isJarFile(file)) {
-            throw new IllegalArgumentException("File emust be a JAR file!");
+            throw new IllegalArgumentException("File must be a JAR file!");
         }
 
         try (final JarFile jar = new JarFile(file.toFile())) {
             final PluginConfig metaConfig = new ManifestPluginConfig(jar.getManifest(), PluginLoader.MANIFEST_NAME);
 
+            // Required properties.
             final String rawName = metaConfig.getString(PluginLoader.META_NAME);
+            final String rawVersion = metaConfig.getString(PluginLoader.META_VERSION);
+            final String main = metaConfig.getString(PluginLoader.META_MAIN);
+
+            if (rawName == null) {
+                throw new MalformedPluginMetaException(String.valueOf(file), "Missing name attribute!");
+            }
+            if (rawVersion == null) {
+                throw new MalformedPluginMetaException(String.valueOf(file), "Missing version attributes!");
+            }
+            if (main == null) {
+                throw new MalformedPluginMetaException(String.valueOf(file), "Missing main class attributes!");
+            }
+
+            // Parsed required properties.
             final PluginType pluginType = PluginType.parsePluginName(rawName);
             final String name = pluginType.extractPluginName(rawName);
-            final Version version = new Version(metaConfig.getString(PluginLoader.META_VERSION));
-            final String main = metaConfig.getString(PluginLoader.META_MAIN);
+            final Version version = new Version(rawVersion);
+
+            // Optional properties.
             final String displayName = metaConfig.getString(PluginLoader.META_DISPLAY_NAME, name);
             final String[] dependencies = metaConfig.getStrings(PluginLoader.META_DEPENDENCIES);
             final String[] optionalDependencies = metaConfig.getStrings(PluginLoader.META_OPTIONAL_DEPENDENCIES);
             final String[] authors = metaConfig.getStrings(PluginLoader.META_AUTHORS, (String[]) null);
 
             final SimplePluginMeta pluginMeta = new SimplePluginMeta();
+            pluginMeta.setLocation(file.toUri().toURL());
             pluginMeta.setName(name);
             pluginMeta.setVersion(version);
             pluginMeta.setMain(main);
@@ -167,7 +185,8 @@ public class PluginLoader {
      *             If the plugin meta is malformed (including if the main class
      *             does not exist, is an interface, etc.).
      */
-    @SuppressWarnings("resource")    // Class loader is not closed.
+    // Class loader is not closed.
+    @SuppressWarnings("resource")
     public Plugin loadPlugin(final PluginMeta meta) throws MalformedPluginMetaException {
         if (!PluginMeta.isValid(meta)) {
             throw new IllegalArgumentException("Meta must be valid!");
@@ -178,9 +197,9 @@ public class PluginLoader {
         final String displayName = meta.getDisplayName();
         final String main = meta.getMain();
 
-        PluginLoader.LOGGER.debug("Starting loading of <{0}>.", name);
+        PluginLoader.LOGGER.debug("Starting loading of <{}>.", name);
 
-        final PluginClassLoader classLoader = new PluginClassLoader(location);
+        final PluginClassLoader classLoader = new PluginClassLoader(name, location, this.parentClassLoader);
         final Class<?> clazz;
         try {
             clazz = Class.forName(main, true, classLoader);
@@ -200,8 +219,11 @@ public class PluginLoader {
         } catch (final NoSuchMethodException cause) {
             throw new MalformedPluginMetaException(name, "Main class does not have a default constructor!", cause);
         }
-        if (!ctor.isAccessible()) {
+        if (!Modifier.isPublic(ctor.getModifiers())) {
             throw new MalformedPluginMetaException(name, "Constructor of main class is not visible!");
+        }
+        if (!ctor.isAccessible()) {
+            ctor.setAccessible(true);
         }
         final Plugin plugin;
         try {
@@ -214,9 +236,7 @@ public class PluginLoader {
             throw new MalformedPluginMetaException(name, "Constructor of main class threw an exception!", cause);
         }
 
-        this.classLoaders.put(meta.getName(), classLoader);
-
-        PluginLoader.LOGGER.info("Loaded {0}.", displayName);
+        PluginLoader.LOGGER.info("Loaded {}.", displayName);
 
         // Tell plugin that it is loaded.
         plugin.onLoad();

@@ -29,12 +29,27 @@ import java.nio.file.Path;
  * recommended) to become a real plugin. This class has to be referenced in the
  * {@link PluginMeta plugin metadata} file to be loaded correctly.
  * </p>
+ * 
+ * <p>
+ * <b> NOTE: Do not implement this interface directly but extend
+ * {@link BasePlugin}! </b>
+ * </p>
  *
  * @see PluginManager
  * @see PluginMeta
  * @see PluginType
  */
 public interface Plugin {
+    /**
+     * Method to remind the developer not to implement this interface directly
+     * for those that do not read JavaDoc. Please extend {@link BasePlugin}
+     * instead.
+     *
+     * @deprecated Extend {@link BasePlugin} instead.
+     */
+    @Deprecated
+    void __do_not_implement_this_interface_directly();
+
     /**
      * Stub method. To be overridden.
      * 

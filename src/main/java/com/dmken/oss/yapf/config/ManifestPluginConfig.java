@@ -21,6 +21,7 @@ package com.dmken.oss.yapf.config;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 import com.dmken.oss.yapf.PluginConfig;
@@ -96,7 +97,14 @@ public class ManifestPluginConfig extends AbstractPluginConfig {
      */
     @Override
     protected String getString0(final String property) {
-        return this.manifest.getAttributes(this.name).getValue(property);
+        if (this.manifest == null) {
+            return null;
+        }
+        final Attributes attributes = this.manifest.getAttributes(this.name);
+        if (attributes == null) {
+            return null;
+        }
+        return attributes.getValue(property);
     }
 
     /**
