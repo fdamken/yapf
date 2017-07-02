@@ -132,6 +132,16 @@ public enum PluginType {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * @see java.lang.Enum#toString()
+     */
+    @Override
+    public String toString() {
+        return this.name().toLowerCase();
+    }
+
+    /**
      * Extracts the actual plugin name without the suffix from the given plugin
      * name.
      *
@@ -146,7 +156,7 @@ public enum PluginType {
 
         String result = pluginName;
         for (final String suffix : this.suffixes) {
-            result = result.replace(Pattern.quote(suffix) + "$", "");
+            result = result.replaceAll(Pattern.quote(suffix) + "$", "");
         }
         return result;
     }

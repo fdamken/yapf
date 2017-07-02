@@ -125,10 +125,49 @@ public class PluginLoaderTest {
 
         final Plugin plugin = this.pluginLoader.loadPlugin(meta);
 
-        Assert.assertNotNull(plugin);
-        // We do not have access to the class at test compile to (lives in
-        // resources).
         Assert.assertTrue((boolean) plugin.getClass().getMethod("isTestSuccessful").invoke(plugin));
+    }
+
+    @Test
+    public void testClassLoadingSeparation() throws Exception {
+        final String classNameSpec = "SimpleSpecPlugin";
+        final String classNameRegular = "SimpleRegularPlugin";
+        final String classNameImpl = "SimpleImplPlugin";
+
+        final Path jarFileSpec = this.createJarFile(attributes -> {
+            attributes.putValue("name", "test-spec");
+            attributes.putValue("version", "1.0.0");
+            attributes.putValue("main", "test." + classNameSpec);
+        } , classNameSpec);
+        final Path jarFileRegular = this.createJarFile(attributes -> {
+            attributes.putValue("name", "test");
+            attributes.putValue("version", "1.0.0");
+            attributes.putValue("main", "test." + classNameRegular);
+        } , classNameRegular);
+        final Path jarFileImpl = this.createJarFile(attributes -> {
+            attributes.putValue("name", "test-impl");
+            attributes.putValue("version", "1.0.0");
+            attributes.putValue("main", "test." + classNameImpl);
+        } , classNameImpl);
+
+        final PluginMeta metaSpec = this.pluginLoader.extractPluginMeta(jarFileSpec);
+        final PluginMeta metaRegular = this.pluginLoader.extractPluginMeta(jarFileRegular);
+        final PluginMeta metaImpl = this.pluginLoader.extractPluginMeta(jarFileImpl);
+
+        this.assertPluginMeta(metaSpec, "test", new Version(1, 0, 0), "test." + classNameSpec, null, null, null, null,
+                PluginType.SPECIFICATION);
+        this.assertPluginMeta(metaRegular, "test", new Version(1, 0, 0), "test." + classNameRegular, null, null, null, null,
+                PluginType.REGULAR);
+        this.assertPluginMeta(metaImpl, "test", new Version(1, 0, 0), "test." + classNameImpl, null, null, null, null,
+                PluginType.IMPLEMENTATION);
+
+        final Plugin pluginSpec = this.pluginLoader.loadPlugin(metaSpec);
+        final Plugin pluginRegular = this.pluginLoader.loadPlugin(metaRegular);
+        final Plugin pluginImpl = this.pluginLoader.loadPlugin(metaImpl);
+
+        Assert.assertEquals(0xCAFE_BABE, pluginSpec.getClass().getMethod("testSpec").invoke(pluginSpec));
+        Assert.assertEquals(42, pluginRegular.getClass().getMethod("testRegular").invoke(pluginRegular));
+        Assert.assertEquals(0xDEAD_BEEF, pluginImpl.getClass().getMethod("testImpl").invoke(pluginImpl));
     }
 
     private PluginMeta parsePluginMeta(final Consumer<Attributes> attributeSetter)
@@ -172,7 +211,7 @@ public class PluginLoaderTest {
     }
 
     private Path createJarFile(final Consumer<Attributes> attributeSetter, final String className) throws IOException {
-        final Path workDir = this.dir.newFolder("test").toPath();
+        final Path workDir = this.dir.newFolder().toPath();
         final Path pluginClass = workDir.resolve(className + ".java");
 
         Files.copy(PluginLoaderTest.class.getResourceAsStream("/test/" + className + ".java"), pluginClass,

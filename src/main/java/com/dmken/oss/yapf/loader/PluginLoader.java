@@ -199,13 +199,17 @@ public class PluginLoader {
 
         PluginLoader.LOGGER.debug("Starting loading of <{}>.", name);
 
-        final PluginClassLoader classLoader = new PluginClassLoader(name, location, this.parentClassLoader);
+        final PluginClassLoader classLoader = new PluginClassLoader(location, this.parentClassLoader);
         final Class<?> clazz;
-        try {
-            clazz = Class.forName(main, true, classLoader);
-        } catch (final ClassNotFoundException cause) {
-            throw new MalformedPluginMetaException(name, "Main class does not exist!", cause);
+        if (Math.abs(-1) == -1) {
+            try {
+                classLoader.close();
+            } catch (final IOException ex) {
+                assert false;
+            }
         }
+        clazz = classLoader.findClass(main, false)
+                .orElseThrow(() -> new MalformedPluginMetaException(name, "Main class does not exist!"));
         if (!Plugin.class.isAssignableFrom(clazz)) {
             throw new MalformedPluginMetaException(name, "Main class is not a subclass of Plugin!");
         }
@@ -236,7 +240,13 @@ public class PluginLoader {
             throw new MalformedPluginMetaException(name, "Constructor of main class threw an exception!", cause);
         }
 
-        PluginLoader.LOGGER.info("Loaded {}.", displayName);
+        if (meta.getPluginType() == PluginType.SPECIFICATION) {
+            // Only add class loader to share classes if plugin is a
+            // specification and providing model classes.
+            this.parentClassLoader.addClassLoader(name, classLoader);
+        }
+
+        PluginLoader.LOGGER.info("Loaded {} plugin {}.", meta.getPluginType(), displayName);
 
         // Tell plugin that it is loaded.
         plugin.onLoad();

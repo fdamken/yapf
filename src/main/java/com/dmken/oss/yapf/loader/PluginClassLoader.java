@@ -21,6 +21,8 @@ package com.dmken.oss.yapf.loader;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -39,19 +41,22 @@ public class PluginClassLoader extends URLClassLoader {
     private static final Logger LOGGER = LoggerFactory.getLogger(PluginClassLoader.class);
 
     /**
+     * Class cache to prevent potential redefinitions of classes which causes a
+     * {@link LinkageError}.
+     * 
+     */
+    private final Map<String, Class<?>> classCache = new HashMap<>();
+
+    /**
      * Constructor of PluginClassLoader.
      * 
-     * @param pluginName
-     *            The name of the plugin this loader is for.
      * @param url
      *            The URL to load classes from.
      * @param parent
      *            The parent class loader.
      */
-    public PluginClassLoader(final String pluginName, final URL url, final DelegatingPluginClassLoader parent) {
+    public PluginClassLoader(final URL url, final DelegatingPluginClassLoader parent) {
         super(new URL[] { url }, parent);
-
-        parent.addClassLoader(pluginName, this);
 
         PluginClassLoader.LOGGER.trace("Creating new PluginClassLoader for <{}>.", url.toString());
     }
@@ -89,15 +94,18 @@ public class PluginClassLoader extends URLClassLoader {
             PluginClassLoader.LOGGER.debug("Searching for class <{}>.", name);
         }
 
-        Class<?> result = null;
-        PluginClassLoader.LOGGER.trace("Probing classpath <{}>.", name);
-        try {
-            result = super.findClass(name);
-        } catch (final ClassNotFoundException dummy) {
-            // Class not found. Ignore.
+        PluginClassLoader.LOGGER.trace("Probing class cache <{}>.", name);
+        Class<?> result = this.classCache.get(name);
+        if (result == null) {
+            PluginClassLoader.LOGGER.trace("Not found! Probing classpath <{}>.", name);
+            try {
+                result = super.findClass(name);
+            } catch (final ClassNotFoundException dummy) {
+                // Class not found. Ignore.
+            }
         }
         if (global) {
-            PluginClassLoader.LOGGER.trace("Probing parent class loader <{}>.", name);
+            PluginClassLoader.LOGGER.trace("Not found! Probing parent class loader <{}>.", name);
 
             try {
                 result = this.getCastedParent().findClass(name);
@@ -109,10 +117,14 @@ public class PluginClassLoader extends URLClassLoader {
             PluginClassLoader.LOGGER.trace("Not found! Probing forName(...) with current class loader <{}>.", name);
 
             try {
-                result = Class.forName(name, true, this);
+                result = Class.forName(name, false, this);
             } catch (final ClassNotFoundException dummy) {
                 // Class not found. Ignore.
             }
+        }
+
+        if (result != null) {
+            this.classCache.put(name, result);
         }
 
         if (result == null) {
