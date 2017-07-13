@@ -37,10 +37,13 @@ import com.dmken.oss.yapf.PluginMeta;
 import com.dmken.oss.yapf.PluginType;
 import com.dmken.oss.yapf.Version;
 import com.dmken.oss.yapf.config.ManifestPluginConfig;
+import com.dmken.oss.yapf.event.PostPluginLoadEvent;
+import com.dmken.oss.yapf.event.PrePluginLoadEvent;
 import com.dmken.oss.yapf.meta.SimplePluginMeta;
 import com.dmken.oss.yapf.meta.UnmodifiablePluginMeta;
 import com.dmken.oss.yapf.meta.exception.MalformedPluginMetaException;
 import com.dmken.oss.yapf.util.FileUtil;
+import com.dmken.oss.yapf.util.EventUtil;
 
 /**
  * The {@link PluginLoader plugin loader} is a service for loading plugins. That
@@ -199,9 +202,21 @@ public class PluginLoader {
 
         PluginLoader.LOGGER.debug("Starting loading of <{}>.", name);
 
+        final PrePluginLoadEvent preEvent = new PrePluginLoadEvent(meta);
+        EventUtil.fire(preEvent);
+        if (preEvent.isCancelled()) {
+            throw new MalformedPluginMetaException(name,
+                    "Plugin loading was cancelled by an event listener! " + preEvent.getCancelMessages());
+        }
+
         final PluginClassLoader classLoader = new PluginClassLoader(location, this.parentClassLoader);
         final Class<?> clazz;
-        if (Math.abs(-1) == -1) {
+        // The compile is not intelligent enough to see that this code block is
+        // never to be executed.
+        // But it must be there in order to calm the compile as "classLoader" is
+        // not closed (what we do not want).
+        if (Boolean.FALSE) {
+            // Should never, ever get here.
             try {
                 classLoader.close();
             } catch (final IOException ex) {
@@ -250,6 +265,8 @@ public class PluginLoader {
 
         // Tell plugin that it is loaded.
         plugin.onLoad();
+
+        EventUtil.fire(new PostPluginLoadEvent(plugin));
 
         return plugin;
     }

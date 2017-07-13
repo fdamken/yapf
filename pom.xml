@@ -173,6 +173,24 @@
 			<version>${log4j.version}</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>${spring.version}</version>
+			<scope>test</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>${slf4j.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 
@@ -277,7 +295,9 @@
 								<include>**/*Test.java</include>
 							</includes>
 							<classpathDependencyExcludes>
+								<classpathDependencyExclude>org.slf4j:jcl-over-slf4j</classpathDependencyExclude>
 								<classpathDependencyExclude>org.springframework:spring-context</classpathDependencyExclude>
+								<classpathDependencyExclude>org.springframework:spring-test</classpathDependencyExclude>
 							</classpathDependencyExcludes>
 						</configuration>
 					</execution>
